@@ -57,9 +57,22 @@
 # 총 별자리의 개수와 가장 많은 별로 이루어진 별자리의 크기를 공백으로 구분해 출력하라.
 
 
-def findSet(x, p):
-    if x != p[x]:
-        x = p[x]
+def dfs(s, cur_star):
+    visited = [0]*M
+    visited[s] = 1
+    stack = [s]
+    while stack:
+        v = stack.pop()
+        p_cnt[v] = cur_star
+        for w in AL[v]:
+            if not visited[w]:
+                stack.append(w)
+                visited[w] = 1
+
+
+def find_set(x):
+    if x != p_size[x]:
+        x = p_size[x]
 
     return x
 
@@ -68,7 +81,7 @@ def kruskal():
     S = 0
     cnt = 0
     for s, e, w in edges:
-        rep_s, rep_e = findSet(s, p_size), findSet(e, p_size)
+        rep_s, rep_e = find_set(s), find_set(e)
         if rep_s != rep_e:
             p_size[rep_e] = rep_s
             S += w
@@ -87,6 +100,7 @@ for t in range(1, int(input())+1):
 
     sky = [[0]*N for _ in range(N)]
     p_cnt = [i for i in range(M)]
+    AL = [[] for _ in range(M)]
     # 별자리 개수 구하기
     for i in range(M):
         star = stars[i]
@@ -95,16 +109,21 @@ for t in range(1, int(input())+1):
             for nc in range(c-j, c+j+1):
                 if 0 <= r-l+j+1 < N and 0 <= nc < N:
                     if sky[r-l+j+1][nc]:
-                        p_cnt[i] = findSet(sky[r-l+j+1][nc]-1, p_cnt)
-                    sky[r-l+j+1][nc] = i+1
+                        pre_star = sky[r-l+j+1][nc] - 1
+                        dfs(pre_star, i)
+                        AL[i].append(pre_star)
+                        AL[pre_star].append(i)
+                    sky[r-l+j+1][nc] = i + 1
                 if 0 <= r+l-j-1 < N and 0 <= nc < N:
                     if sky[r+l-j-1][nc]:
-                        p_cnt[i] = findSet(sky[r-l+j+1][nc]-1, p_cnt)
-                    sky[r+l-j-1][nc] = i+1
+                        pre_star = sky[r+l-j-1][nc] - 1
+                        dfs(pre_star, i)
+                        AL[i].append(pre_star)
+                        AL[pre_star].append(i)
+                    sky[r+l-j-1][nc] = i + 1
 
     # 별자리 크기 구하기
     edges = []
-    p_size = [i for i in range(M)]
     star_cnt = [p_cnt.count(i) for i in range(M)]
     max_star = star_cnt.index(max(star_cnt))
     for i in range(M-1):
@@ -114,6 +133,7 @@ for t in range(1, int(input())+1):
                 edges.append((i, j, distance))
 
     edges = sorted(edges, key=lambda x: x[2])
+    p_size = [i for i in range(M)]
     size = kruskal()
 
     print('#%d %d %d' % (t, len(set(p_cnt)), size))
